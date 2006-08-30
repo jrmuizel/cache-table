@@ -40,6 +40,8 @@
 #include "cache_table.hpp"
 #include "hash_fun.hpp"
 
+#include <utility>
+
 namespace mm
 {
     

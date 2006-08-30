@@ -38,6 +38,7 @@
 #define _CACHE_TABLE_HPP_
 
 #include <cstddef>
+#include <utility>
 
 // #include <sys/mman.h>
 
@@ -152,7 +153,7 @@ private:
     pointer            m_pos;
 
     friend class cache_table_const_iterator<V,K,DF,HF,KEq,KEx,A>;
-    friend class cache_table;// <V,K,DF,HF,KEq,KEx,A>;
+    friend class cache_table<V,K,DF,HF,KEq,KEx,A>;
 };
 
 ////////////////////////////////////////////////////////////////////////
