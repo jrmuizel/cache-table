@@ -30,14 +30,10 @@ int main ( int argc, char * const argv[] )
 
     for ( Map::iterator it = map.begin(); it != map.end(); ++it  )
     {
-        std::cout << "map[ " << it->first
-                  << " ] = " << it->second << std::endl;
+        std::cout << "map[ '" << it->first
+                  << "' ] = " << it->second << std::endl;
     }
 
     std::cout << "Items: " << map.size() << std::endl;
-    std::cout << "Collisions: " << map.num_collisions() << std::endl;
-
-    std::cout << "sizeof( Map ): " << sizeof( Map ) << std::endl;
-  
-    return 0;
+    std::cout << "Key collisions: " << map.num_collisions() << std::endl;
 }
