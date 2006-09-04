@@ -1,7 +1,29 @@
-CC=g++
-FLAGS= -g3 -Wall
-INCLUDES= -I..
-LIBS= -lstdc++
 
-all:
-	${CC} map_unittest.cpp -o map_unittest ${FLAGS} ${INCLUDES} ${LIBS}
+bins = map_unittest hash_test
+
+#################################################
+
+FLAGS = -O3 -Wall -fomit-frame-pointer -DNDEBUG -fno-exceptions
+# -fomit-frame-pointer
+INCLUDES = -I..
+LIBS = -lstdc++
+
+CXXFLAGS= $(FLAGS) $(INCLUDES) 
+CXX=cg++
+
+sources = $(bins:=.cpp)
+
+all: $(bins)
+
+$(bins): 
+	$(CXX) $(FLAGS) $(INCLUDES) $(LIBS)  $< -o $@ 
+
+clean: 
+	rm -rf *~ *.d *.o $(bins)
+
+%.d: %.cpp
+	set -e; $(CXX) $(INCLUDES) -MM $(CPPFLAGS) $< \
+		| sed 's/\($*\)\.o[ :]*/\1 $@ : /g' > $@; \
+	        [ -s $@ ] || rm -f $@
+
+include $(sources:.cpp=.d)
