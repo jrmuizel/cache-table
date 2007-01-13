@@ -3,7 +3,7 @@ bins = example1 example2 example3
 
 #################################################
 
-FLAGS = -g3 -ggdb 
+FLAGS = -g3 -ggdb -Wall
 INCLUDES = -I..
 LIBS = -lstdc++
 
