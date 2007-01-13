@@ -1,5 +1,5 @@
 
-bins = example1 example2 example3
+bins = example1 example2 example3 example4
 
 #################################################
 
