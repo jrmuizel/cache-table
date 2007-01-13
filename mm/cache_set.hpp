@@ -60,6 +60,12 @@ struct Identity
     const Value& operator() ( const Value& value ) const { return value; }
 };
 
+
+/** CacheSet class
+ *
+ *  @author Matteo Merli
+ *  @date 2006
+ */
 template < class Value,
            class HashFunction = hash<Value>,
            class KeyEqual = equal_to<Value>,
@@ -69,8 +75,7 @@ template < class Value,
 class cache_set
 {
 private:
-    
-    // The actual data
+    /// The actual hash table
     typedef cache_table< Value, Value,
                          DiscardFunction,
                          HashFunction, KeyEqual,
@@ -80,100 +85,308 @@ private:
     HT m_ht;
         
 public:
+
+    /// The cache_set's key type, Key. 
     typedef typename HT::key_type key_type;
+
+    /// The object type
     typedef Value data_type;
+    
+    /// The object type
     typedef Value mapped_type;
-        
+
+    /// The type of object, pair<const key_type, data_type>, stored in the
+    /// cache_set.
     typedef typename HT::value_type value_type;
+
+    /// The cache_set's hash function. 
     typedef typename HT::hasher hasher;
+
+    /// Function object that compares keys for equality. 
     typedef typename HT::key_equal key_equal;
-    
+
+    /// An unsigned integral type. 
     typedef typename HT::size_type size_type;
+
+    /// A signed integral type. 
     typedef typename HT::difference_type difference_type;
-    typedef typename HT::pointer pointer;
+
+    /// Pointer to value_type.
+    typedef typename HT::const_pointer pointer;
+
+    /// Const pointer to value_type. 
     typedef typename HT::const_pointer const_pointer;
-    typedef typename HT::reference reference;
+
+    /// Reference to value_type.
+    typedef typename HT::const_reference reference;
+
+    /// Const reference to value_type.
     typedef typename HT::const_reference const_reference;
+
+    /// Iterator used to iterate through a cache_set. 
+    typedef typename HT::const_iterator iterator;
     
-    typedef typename HT::iterator iterator;
+    /// Const iterator used to iterate through a cache_set. 
     typedef typename HT::const_iterator const_iterator;
     
+    
 public:
-        
+    /** Returns the hasher object used by the cache_set. 
+     */ 
     hasher hash_funct() const { return m_ht.hash_funct(); }
+
+    /// Returns the key_equal object used by the cache_set. 
     key_equal key_eq() const  { return m_ht.key_eq(); }
 
-    // Iterator functions
-    iterator begin()  { return m_ht.begin(); }
-    iterator end()    { return m_ht.end();   }
-    const_iterator begin() const { return m_ht.begin(); }
-    const_iterator end()   const { return m_ht.end();   }
+    /// Get a const iterator to first item
+    iterator begin() const { return m_ht.begin(); }
+    /// Get a const iterator to the end of the table
+    iterator end()   const { return m_ht.end();   }
     
 public:
     
-    cache_set( size_type size ) : m_ht( size ) {}
-    
+    cache_set() : m_ht() {}
+
+    /** Constructor.  You have to specify the size of the underlying table,
+     *  in terms of the maximum number of allowed elements.
+     * 
+     *  @attention After the cache_set is constructed, you have to call the
+     *  set_empty_key() method to set the value of an unused key.
+     *
+     *  @param n The (fixed) size of table.
+     *  @see set_empty_key
+     */
+    cache_set( size_type n ) : m_ht( n, hasher(), key_equal() ) {}
+
+    cache_set( size_type n, const hasher& hash )
+        : m_ht( n, hash, key_equal() )
+    {}
+
+    cache_set( size_type n,
+               const hasher& hash,
+               const key_equal& ke  )
+        : m_ht( n, hash, ke )
+    {}
+
+    /** Creates a cache_set with a copy of a range.
+     */
+    template <class InputIterator>
+    cache_set( InputIterator first, InputIterator last )
+        : m_ht(  2 * std::distance( first, last ) )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Creates a cache_set with a copy of a range and a bucket count of at
+     *  least @a n.
+     */
+    template <class InputIterator>
+    cache_set( InputIterator first, InputIterator last, size_type n )
+            : m_ht(  2 * n )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Creates a cache_set with a copy of a range and a bucket count of at
+     *  least @a n, using @a h as the hash function.
+     */
+    template <class InputIterator>
+    cache_set( InputIterator first, InputIterator last,
+              size_type n, const hasher& h )
+        : m_ht(  2 * n, h )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Creates a cache_set with a copy of a range and a bucket count of at
+     *  least n, using h as the hash function and k as the key equal
+     *  function.
+     */
+    template <class InputIterator>
+    cache_set( InputIterator first, InputIterator last,
+              size_type n, const hasher& h, 
+              const key_equal& k )
+        : m_ht(  2 * n, h, k )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Copy constructor
+     *
+     *  @param other the cache_set to be copied
+     */
+    cache_set( const cache_set& other )
+        : m_ht( other.m_ht )
+    {}
+
+    /** The assignment operator
+     *
+     *  @param other the cache_set to be copied
+     *  @return a reference to a new cache_set object
+     */
+    cache_set& operator= ( const cache_set& other )
+    {
+        if ( &other != this )
+        {
+            m_ht = other.m_ht;
+        }
+        
+        return *this;
+    }
+
+    /** Sets the value of the empty key.
+     *   
+     *  @param value the value value that will be used to identify empty items.
+     */
     void set_empty_key( const value_type& value )
     {
         m_ht.set_empty_value( value );
     }
-    
+
+    /** Insert an item in the set.
+     *
+     *  The item, the pair(key, data), will be inserted in the hash table.
+     *  In case of a key hash collision, the inserted item will replace the
+     *  existing one.
+     *
+     *  Following the @a DiscardFunction policy there will be a notification
+     *  that old item has been replaced.
+     * 
+     *  @return A @p pair<iterator,bool> which contain an #iterator to the
+     *  inserted item and @p true if the item was correctly inserted, or @p
+     *  false if the item was not inserted.
+     */
     pair<iterator,bool> insert( const value_type& obj )
     { return m_ht.insert( obj ); }
 
+    /** Iterator insertion.
+     *  Insert multiple items into the set, using the input iterators.
+     *
+     *  @param first first elelement 
+     *  @param last last element
+     *  @see insert( const value_type& )
+     */
     template <class InputIterator>
     void insert( InputIterator first, InputIterator last )
     { m_ht.insert( first, last ); }
 
-    template <class InputIterator>
-    pair<iterator,bool> insert_noresize( InputIterator first,
-                                         InputIterator last )
-    { m_ht.insert_noresize( first, last ); }
-
+    /** Not standard.. */
     iterator insert( iterator it, const value_type& obj )
     { return m_ht.insert( obj ).first; }
-        
-    iterator find( const key_type& key )
-    { return m_ht.find( key ); }
 
-    const_iterator find( const key_type& key ) const
-    { return m_ht.find( key ); }
+    /** Finds an element in the set.
+     *
+     *  @param item the item to look for
+     *
+     *  @return a #const_iterator pointing to the item, or @p end() if the
+     *  item cannot be found in the set.
+     */
+    iterator find( const value_type& item ) const 
+    { return m_ht.find( item ); }
 
+    /** Erases the element identified by the key. 
+     *
+     *  @param key The key of the item to be deleted.
+     *
+     *  @return The number of deleted item. Since the item in cache_set are
+     *  unique, this will either be 1 when the key is found and 0 when no
+     *  item is deleted.
+     */
     size_type erase( const key_type& key ) { return m_ht.erase( key ); }
+    
+    /** Erases the element pointed to by the iterator. 
+     *
+     *  @param it a valid iterator to an element in cache_set.
+     */
     void erase( iterator it ) { m_ht.erase( it ); }
+
+    /** Erases all elements in a range.
+     *
+     *  The range of elements to be deleted will be @p [first,last)
+     *
+     *  @param first The first element in the range (included)
+     *  @param last  The last element in the range (excluded)
+     */
     void erase( iterator first, iterator last ) { m_ht.erase( first, last ); }
 
+    /** Erases all of the elements. */
     void clear() { m_ht.clear(); }
 
+    /** Increases the bucket count to at least @a size.
+     *
+     *  @param size the new maximum number of elements.
+     *
+     *  @warning This operation can be particularly time-consuming. The
+     *  algorithm is O(n) and can leave to the complete re-hash of all
+     *  of the elements in the cache_set.
+     */
+    void resize( size_type size ) { m_ht.resize( size ); }
+
+    /** Swap the content of two cache_set.
+     *
+     *  @param other another cache_set
+     */
     void swap( cache_set& other ) { m_ht.swap( other.m_ht ); }
 
-    // Comparison 
+    /** Equality comparison.
+     *
+     *  @param other The other cache_set to compare.
+     *  @return @p true if the 2 cache_set are equal.
+     */
     bool operator==( const cache_set& other ) const
     { return m_ht == other.m_ht; }
+
+    /** Dis-Equality comparison.
+     *
+     *  @param other The other cache_set to compare.
+     *  @return @p true if the 2 cache_set are @a NOT equal.
+     */
     bool operator!=( const cache_set& other ) const
     { return m_ht != other.m_ht; }
 
+    /** Get the size of the cache_set.
+     *  The size represent the number of non-empty elements that can be
+     *  found in the container.
+     *  @return the number of elements in the set
+     */
     size_type size()         const { return m_ht.size(); }
-    size_type max_size()     const { return m_ht.max_size(); }
-    size_type bucket_count() const { return m_ht.bucket_count(); }
-    bool empty()             const { return m_ht.empty(); }
-        
-    size_type num_collisions() const { return m_ht.num_collisions(); }
     
+    /** Get the maximum size of the set.
+     *  This corresponds to the maximum number of item that the set can
+     *  contain.
+     *  @return the maximum number of elements
+     */
+    size_type max_size()     const { return m_ht.max_size(); }
+
+    /** Get the number of allocated buckets.
+     *  This corresponds to the max_size() value.
+     *  @return the number of buckets
+     *  @see max_size
+     */
+    size_type bucket_count() const { return m_ht.bucket_count(); }
+    
+    /** Test for empty.
+     *  @return true if the cache_set does not contains items.
+     */
+    bool empty()             const { return m_ht.empty(); }
+
+    /** Get the number of hash key collisions.
+     * 
+     *  @return the number of hash key collisions
+     */
+    size_type num_collisions() const { return m_ht.num_collisions(); }
+
+    /** Swap the content of two cache_set instances.
+     *
+     *  @param m1 a cache_set
+     *  @param m2 another cache_set
+     */
     friend inline void swap(
         cache_set<Value,HashFunction,KeyEqual,DiscardFunction,Allocator>& m1,
         cache_set<Value,HashFunction,KeyEqual,DiscardFunction,Allocator>& m2 )
     {
         m1.swap( m2 );
     }
-        
-private:
-    /**
-     * It's not possible to construct a cache_table without specifying 
-     * its size.
-     */
-    cache_set()
-    {}
     
 };
     

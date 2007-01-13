@@ -30,7 +30,6 @@
 // ---
 // Author: Craig Silverstein
 
-
 #include <google/sparsehash/config.h>
 #include <stdio.h>
 #include <time.h>              // for silly random-number-seed generator
@@ -42,9 +41,11 @@
 #include <iomanip>             // for setprecision()
 #include <string>
 
+
 #include <mm/cache_map.hpp>
 #include <mm/cache_set.hpp>
 #include <mm/hash_fun.hpp>
+#include <mm/jenkins_hash_fun.hpp>
 
 using mm::cache_map;
 using mm::cache_set;
@@ -432,7 +433,7 @@ void test()
 {
     test_int<htint>();
     test_string<htstr>();
-    // test_charptr<ht>();
+    test_charptr<ht>();
 }
 
 void print_bin( size_t n )
@@ -456,63 +457,23 @@ void test_hash( const string& s1, const string& s2 )
     std::cout << std::endl;
 }
 
-struct MyTest
-{
-    MyTest() : i( 0 ) { std::cout << "MyTest()" << std::endl; }
-    MyTest( int _i ) : i( _i ) { std::cout << "MyTest( " << i << " )" << std::endl; }
-    ~MyTest() { std::cout << "~MyTest( " << i << " )" << std::endl; }
-    int i;
-    bool operator==( const MyTest& other ) const { return i == other.i; }
-    int operator<( const MyTest& other ) const { return i < other.i; }
-    friend size_t hash_value( const MyTest& t ) { return t.i; }
-};
-
 int main( int argc, char **argv )
 {
     LOGF << "\n\nTEST WITH CACHE_MAP\n\n";
-    test < cache_map<char *, int, mm::hash<char *>, strcmp_fnc>,
-           cache_map< string, int, mm::hash<string> >,
+    test < cache_map<char *, int, mm::jenkins_hash<char *>, strcmp_fnc>,
+           cache_map< string, int, mm::jenkins_hash<string> >,
            cache_map<int, int>
          >();
 
     LOGF << "\n\nTEST WITH CACHE_SET\n\n";
-    test < cache_set<char *, mm::hash<char *>, strcmp_fnc>,
-           cache_set<string>,
+    test < cache_set<char *, mm::jenkins_hash<char *>, strcmp_fnc>,
+           cache_set<string, mm::jenkins_hash<string> >,
            cache_set<int>
          >();
 
     LOGF << "\nAll tests pass.\n";
 
     std::cout << std::endl;
-    std::cout << "HASH tests..." << std::endl;
-
-    test_hash( "licorice", "Nilsen" );
-    test_hash( "hoped", "unarmed" );
-    test_hash( "ciao", "cian" );
-    test_hash( "ciao", "biao" );
-
-    test_hash( "espy", "taught" );
     
-    /*
-    typedef cache_map<string,int> Map;
-    Map map( 100 );
-    map.set_empty_key( "" );
-    map[ "ciao" ] = 1;
-    map[ "test" ] = 2;
-    map.insert( Map::value_type( "hola", 5 ) );
-
-    std::cout << "Map1: ";
-    for ( Map::iterator it = map.begin(); it != map.end(); ++it )
-        std::cout << "(" << it->first << "," << it->second << ") ";
-    std::cout << std::endl;
-
-    map[ "ciao" ] = 3;
-
-    std::cout << "Map2: ";
-    for ( Map::iterator it = map.begin(); it != map.end(); ++it )
-        std::cout << "(" << it->first << "," << it->second << ") ";
-    std::cout << std::endl;
-    */
-
     return 0;
 }

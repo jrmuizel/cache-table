@@ -9,7 +9,7 @@ INCLUDES = -I..
 LIBS = -lstdc++
 
 CXXFLAGS= $(FLAGS) $(INCLUDES) 
-CXX=cg++
+CXX=g++
 
 sources = $(bins:=.cpp)
 

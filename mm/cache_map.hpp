@@ -42,6 +42,9 @@
 
 #include <utility>
 
+/**
+ * Namespace description.
+ */
 namespace mm
 {
     
@@ -50,7 +53,7 @@ using std::pair;
 using std::allocator;
 using std::_Select1st;
 
-/*! Default "discarding" policy.
+/** Default "discarding" policy.
  *  Ignores discarded item. You can write another policy to do something
  *  useful with this item.
  */
@@ -61,13 +64,18 @@ struct DiscardIgnore
     {}
 };
 
-/*! Cache map...
+/** Cache map...
  *
  *  <b>Template Parameters</b>
  * 
  *  - @a Key : The key type of the map.
- *  - @a T   : The data type of the map.
  *
+ *  - @a T   : The hash_map's data type. This is also defined as
+ *     hash_map::data_type.
+ *     
+ *  - @a HashFunction : Callable hasher.
+ *
+ *  - @a DiscardFunction : Discarded item manager.
  *
  *  @author Matteo Merli
  *  @date 2006
@@ -77,7 +85,7 @@ template < class Key,
            class HashFunction = hash<Key>,
            class KeyEqual = equal_to<Key>,
            class DiscardFunction = DiscardIgnore< pair<Key,T> >,
-           class Allocator = allocator<T> // not used
+           class Allocator = allocator< pair<Key,T> > 
 >
 class cache_map
 {
@@ -92,31 +100,58 @@ private:
     HT m_ht;
         
 public:
+
+    /// The cache_map's key type, Key. 
     typedef typename HT::key_type key_type;
+
+    /// The type of object associated with the keys. 
     typedef T data_type;
+
+    /// The type of object associated with the keys.
     typedef T mapped_type;
-        
+
+    /// The type of object, pair<const key_type, data_type>, stored in the
+    /// hash_map.
     typedef typename HT::value_type value_type;
-    typedef typename HT::hasher hasher; ///< Hash function policy
 
-    /// Key Comparision policy
+    /// The cache_map's hash function. 
+    typedef typename HT::hasher hasher;
+
+    /// Function object that compares keys for equality. 
     typedef typename HT::key_equal key_equal;
-    
-    typedef typename HT::size_type size_type;
-    typedef typename HT::difference_type difference_type;
-    typedef typename HT::pointer pointer;
-    typedef typename HT::const_pointer const_pointer;
-    typedef typename HT::reference reference;
-    typedef typename HT::const_reference const_reference;
-    
-    typedef typename HT::iterator iterator;
 
-    /// Const iterator type
+    /// An unsigned integral type. 
+    typedef typename HT::size_type size_type;
+
+    /// A signed integral type. 
+    typedef typename HT::difference_type difference_type;
+
+    /// Pointer to value_type.
+    typedef typename HT::pointer pointer;
+
+    /// Const pointer to value_type. 
+    typedef typename HT::const_pointer const_pointer;
+
+    /// Reference to value_type.
+    typedef typename HT::reference reference;
+
+    /// Const reference to value_type.
+    typedef typename HT::const_reference const_reference;
+
+    /// Iterator used to iterate through a cache_map. 
+    typedef typename HT::iterator iterator;
+    
+    /// Const iterator used to iterate through a cache_map. 
     typedef typename HT::const_iterator const_iterator;
     
 public:
-        
+    /** Returns the hasher object used by the hash_map. 
+     */ 
     hasher hash_funct() const { return m_ht.hash_funct(); }
+
+    /** Returns the key_equal object used by the hash_map. 
+     *
+     */
     key_equal key_eq() const  { return m_ht.key_eq(); }
 
     /// Get an iterator to first item
@@ -130,18 +165,98 @@ public:
     
 public:
 
-    /*! Constructor.  You have to specify the size of the underlying table,
+    cache_map() : m_ht() {}
+    
+    /** Constructor.  You have to specify the size of the underlying table,
      *  in terms of the maximum number of allowed elements.
      * 
      *  @attention After the cache_map is constructed, you have to call the
      *  set_empty_key() method to set the value of an unused key.
      *
-     *  @param size The (fixed) size of table.
+     *  @param n The (fixed) size of table.
      *  @see set_empty_key
      */
-    cache_map( size_type size ) : m_ht( size ) {}
+    cache_map( size_type n )
+        : m_ht( n, hasher(), key_equal() )
+    {}
 
-    /*! Sets the value of the empty key.
+    cache_map( size_type n, const hasher& hash )
+        : m_ht( n, hash, key_equal() )
+    {}
+
+    cache_map( size_type n,
+               const hasher& hash,
+               const key_equal& ke  )
+        : m_ht( n, hash, ke )
+    {}
+
+    /** Creates a cache_map with a copy of a range.
+     */
+    template <class InputIterator>
+    cache_map( InputIterator first, InputIterator last )
+        : m_ht(  2 * std::distance( first, last ) )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Creates a cache_map with a copy of a range and a bucket count of at
+     *  least @a n.
+     */
+    template <class InputIterator>
+    cache_map( InputIterator first, InputIterator last, size_type n )
+            : m_ht(  2 * n )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Creates a cache_map with a copy of a range and a bucket count of at
+     *  least @a n, using @a h as the hash function.
+     */
+    template <class InputIterator>
+    cache_map( InputIterator first, InputIterator last,
+              size_type n, const hasher& h )
+        : m_ht(  2 * n, h )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Creates a cache_map with a copy of a range and a bucket count of at
+     *  least n, using h as the hash function and k as the key equal
+     *  function.
+     */
+    template <class InputIterator>
+    cache_map( InputIterator first, InputIterator last,
+              size_type n, const hasher& h, 
+              const key_equal& k )
+        : m_ht(  2 * n, h, k )
+    {
+        m_ht.insert( first, last );
+    }
+
+    /** Copy constructor
+     *
+     *  @param other the cache_map to be copied
+     */
+    cache_map( const cache_map& other )
+        : m_ht( other.m_ht )
+    {}
+
+    /** The assignment operator
+     *
+     *  @param other the cache_map to be copied
+     *  @return a reference to a new cache_map object
+     */
+    cache_map& operator= ( const cache_map& other )
+    {
+        if ( &other != this )
+        {
+            m_ht = other.m_ht;
+        }
+        
+        return *this;
+    }
+
+    /** Sets the value of the empty key.
      *   
      *  @param key the key value that will be used to identify empty items.
      */
@@ -149,81 +264,180 @@ public:
     {
         m_ht.set_empty_value( value_type( key, data_type() ) );
     }
-    
+
+    const key_type& get_empty_key() const
+    {
+        return m_ht.get_empty_value().first;
+    }
+
+    /** Insert an item in the map.
+     *
+     *  The item, the pair(key, data), will be inserted in the hash table.
+     *  In case of a key hash collision, the inserted item will replace the
+     *  existing one.
+     *
+     *  Following the @a DiscardFunction policy there will be a notification
+     *  that old item has been replaced.
+     * 
+     *  @return A @p pair<iterator,bool> which contain an #iterator to the
+     *  inserted item and @p true if the item was correctly inserted, or @p
+     *  false if the item was not inserted.
+     */
     pair<iterator,bool> insert( const value_type& obj )
     { return m_ht.insert( obj ); }
 
+    /** Non-stardard insert method.
+     *  Insert an (key,data) pair in the map.
+     *
+     *  @warning Don't use it if you want to maintain source code
+     *  compatibility with other @a Associative @a Containers.
+     *  @see insert( const value_type& )
+     */ 
     pair<iterator,bool> insert( const key_type& key, const data_type& data )
     { return m_ht.insert( value_type( key, data ) ); }
 
+    /** Iterator insertion.
+     *  Insert multiple items into the map, using the input iterators.
+     *
+     *  @param first first elelement 
+     *  @param last last element
+     *  @see insert( const value_type& )
+     */
     template <class InputIterator>
     void insert( InputIterator first, InputIterator last )
     { m_ht.insert( first, last ); }
 
-    template <class InputIterator>
-    pair<iterator,bool> insert_noresize( InputIterator first,
-                                         InputIterator last )
-    { m_ht.insert_noresize( first, last ); }
-
+    /** Not standard.. */
     iterator insert( iterator it, const value_type& obj )
     { return m_ht.insert( obj ).first; }
-        
+
+    /** Finds an element whose key is @a key
+     *
+     *  @param key the key of the item
+     *
+     *  @return an #iterator pointing to the item, or @p end() if the key
+     *  cannot be found in the map.
+     */
     iterator find( const key_type& key )
     { return m_ht.find( key ); }
 
+    /** Finds an element whose key is @a key
+     *
+     *  @param key the key of the item
+     *
+     *  @return a #const_iterator pointing to the item, or @p end() if the key
+     *  cannot be found in the map.
+     */
     const_iterator find( const key_type& key ) const
     { return m_ht.find( key ); }
-        
+
+    /** Reference operator.
+     *
+     *  Returns a reference to the object that is associated with a
+     *  particular key. If the cache_map does not already contain such an
+     *  object, operator[] inserts the default object data_type().
+     *
+     *  @return a reference to an item, found using the key or newly created.
+     */
     data_type& operator[]( const key_type& key )
     { return m_ht.find_or_insert( key ).second; }
 
+    /** Erases the element identified by the key. 
+     *
+     *  @param key The key of the item to be deleted.
+     *
+     *  @return The number of deleted item. Since the item in cache_map are
+     *  unique, this will either be 1 when the key is found and 0 when no
+     *  item is deleted.
+     */
     size_type erase( const key_type& key ) { return m_ht.erase( key ); }
+
+    /** Erases the element pointed to by the iterator. 
+     *
+     *  @param it a valid iterator to an element in cache_map.
+     */
     void erase( iterator it ) { m_ht.erase( it ); }
+
+    /** Erases all elements in a range.
+     *
+     *  The range of elements to be deleted will be @p [first,last)
+     *
+     *  @param first The first element in the range (included)
+     *  @param last  The last element in the range (excluded)
+     */
     void erase( iterator first, iterator last ) { m_ht.erase( first, last ); }
 
+    /** Erases all of the elements. */
     void clear() { m_ht.clear(); }
 
+    /** Increases the bucket count to at least @a size.
+     *
+     *  @param size the new maximum number of elements.
+     *
+     *  @warning This operation can be particularly time-consuming. The
+     *  algorithm is O(n) and can leave to the complete re-hash of all
+     *  of the elements in the cache_map.
+     */
+    void resize( size_type size ) { m_ht.resize( size ); }
+
+    /** Swap the content of two cache_map.
+     *
+     *  @param other another cache_map
+     */
     void swap( cache_map& other ) { m_ht.swap( other.m_ht ); }
 
-    // Comparison
+    /** Equality comparison.
+     *
+     *  @param other The other cache_map to compare.
+     *  @return @p true if the 2 cache_map are equal.
+     */
     bool operator==( const cache_map& other ) const
     { return m_ht == other.m_ht; }
+
+    /** Dis-Equality comparison.
+     *
+     *  @param other The other cache_map to compare.
+     *  @return @p true if the 2 cache_map are @a NOT equal.
+     */
     bool operator!=( const cache_map& other ) const
     { return m_ht != other.m_ht; }
 
-    /*! Get the size of the map.
+    /** Get the size of the map.
      *  The size represent the number of non-empty elements that can be
      *  found in the container.
      *  @return the number of elements in the map
      */
     size_type size()         const { return m_ht.size(); }
     
-    /*! Get the maximum size of the map.
+    /** Get the maximum size of the map.
      *  This corresponds to the maximum number of item that the map can
      *  contain.
      *  @return the maximum number of elements
      */
     size_type max_size()     const { return m_ht.max_size(); }
 
-    /*! Get the number of allocated buckets.
+    /** Get the number of allocated buckets.
      *  This corresponds to the max_size() value.
      *  @return the number of buckets
      *  @see max_size
      */
     size_type bucket_count() const { return m_ht.bucket_count(); }
     
-    /*! Test for empty.
+    /** Test for empty.
      *  @return true if the cache_map does not contains items.
      */
     bool empty()             const { return m_ht.empty(); }
 
-    /*!
+    /** Get the number of hash key collisions.
      * 
      *  @return the number of hash key collisions
      */
     size_type num_collisions() const { return m_ht.num_collisions(); }
 
-    /*! Swap the content of two cache_map instances.
+    /** Swap the content of two cache_map instances.
+     *
+     *  @param m1 a cache_map
+     *  @param m2 another cache_map
      */
     friend inline void swap(
         cache_map<Key,T,HashFunction,KeyEqual,DiscardFunction,Allocator>& m1,
@@ -231,13 +445,6 @@ public:
     {
         m1.swap( m2 );
     }
-        
-private:
-    /*! It's not possible to construct a cache_table without specifying its
-     *  size.
-     */
-    cache_map()
-    {}
     
 };
     
