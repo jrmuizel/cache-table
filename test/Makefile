@@ -1,10 +1,9 @@
 
-bins = map_unittest hash_test
+bins = map_unittest 
 
 #################################################
 
 FLAGS = -O3 -Wall -fomit-frame-pointer -DNDEBUG -fno-exceptions
-# -fomit-frame-pointer
 INCLUDES = -I..
 LIBS = -lstdc++
 
