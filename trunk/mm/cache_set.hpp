@@ -138,10 +138,14 @@ public:
     /// Returns the key_equal object used by the cache_set. 
     key_equal key_eq() const  { return m_ht.key_eq(); }
 
+    /// Get an iterator to first item
+    iterator begin()             { return m_ht.begin(); }
+    /// Get an iterator to the end of the table
+    iterator end()               { return m_ht.end();   }
     /// Get a const iterator to first item
-    iterator begin() const { return m_ht.begin(); }
+    const_iterator begin() const { return m_ht.begin(); }
     /// Get a const iterator to the end of the table
-    iterator end()   const { return m_ht.end();   }
+    const_iterator end()   const { return m_ht.end();   }
     
 public:
     
