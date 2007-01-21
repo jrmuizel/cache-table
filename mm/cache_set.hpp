@@ -42,35 +42,72 @@
 
 namespace mm
 {
-    
-using std::equal_to;
-using std::allocator;
 
+/** Default "discarding" policy.
+ *  Ignores discarded item. You can write another policy to do something
+ *  useful with this item.
+ */
 template < class V >
 struct CacheSetDiscardIgnore
 {
+    /** This operator is called when the map need to discard an
+     * item due to a key collision.
+     * 
+     * @param old_value a reference to the element discarded
+     * @param new_value a reference to the element that will enter 
+     *                  in the map
+     * 
+     */
     void operator() ( const V& old_value, const V& new_value )
     {}    
 };
 
+/** Class used as the @a KeyExtract template parameter for CacheTable.
+ * 
+ * In the case of CacheSet, since the @a key correspond with the 
+ * entire stored object, the function must be the @a Identity.
+ * 
+ */
 template <class Value>
 struct Identity
 {
+
+    /** This operator is called to extract the @a key of an item
+     * 
+     * @param value the item 
+     * @return the key of the item which correspond to the item itself
+     */
     Value& operator() ( Value& value ) const { return value; }
+    
+    /** This operator is called to extract the @a key of an item
+     * 
+     * @param value the item 
+     * @return the key of the item which correspond to the item itself
+     */
     const Value& operator() ( const Value& value ) const { return value; }
 };
 
 
-/** CacheSet class
+/** CacheSet class. 
+ * 
+ * Implements a @a set container like std::hash_set, but with a 
+ * fixed element number. 
+ * 
+ *  <b>Template Parameters</b>
+ * 
+ *  - @a Value : The type of items contained in the set.   
+ *  - @a HashFunction : Callable hasher.
+ *  - @a DiscardFunction : Discarded item manager.
+ *  - @a Allocator : Allocator to be used.
  *
  *  @author Matteo Merli
- *  @date 2006
+ *  @date $Date$
  */
 template < class Value,
            class HashFunction = hash<Value>,
-           class KeyEqual = equal_to<Value>,
+           class KeyEqual = std::equal_to<Value>,
            class DiscardFunction = CacheSetDiscardIgnore< Value >,
-           class Allocator = allocator<Value> // not used
+           class Allocator = std::allocator<Value> // not used
 >
 class cache_set
 {
@@ -149,6 +186,10 @@ public:
     
 public:
     
+    /** Constructor. Construct an empty set with the default
+     * number of buckets.
+     * 
+     */
     cache_set() : m_ht() {}
 
     /** Constructor.  You have to specify the size of the underlying table,
@@ -162,17 +203,31 @@ public:
      */
     cache_set( size_type n ) : m_ht( n, hasher(), key_equal() ) {}
 
+    /** Constructor. 
+     * 
+     * @param n the number of item buckets to allocate.
+     * @param hash the hasher function 
+     */
     cache_set( size_type n, const hasher& hash )
         : m_ht( n, hash, key_equal() )
     {}
 
+    /** Constructor. 
+     * 
+     * @param n    the number of item buckets to allocate
+     * @param hash the hasher function
+     * @param ke   the key comparison function
+     */
     cache_set( size_type n,
                const hasher& hash,
                const key_equal& ke  )
         : m_ht( n, hash, ke )
     {}
 
-    /** Creates a cache_set with a copy of a range.
+    /** Constructor. Creates a cache_set with a copy of a range.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
      */
     template <class InputIterator>
     cache_set( InputIterator first, InputIterator last )
@@ -181,8 +236,12 @@ public:
         m_ht.insert( first, last );
     }
 
-    /** Creates a cache_set with a copy of a range and a bucket count of at
-     *  least @a n.
+    /** Constructor. Creates a cache_set with a copy of a range and a 
+     *  bucket count of at least @a n.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
+     * @param n     number of buckets to allocate
      */
     template <class InputIterator>
     cache_set( InputIterator first, InputIterator last, size_type n )
@@ -193,6 +252,11 @@ public:
 
     /** Creates a cache_set with a copy of a range and a bucket count of at
      *  least @a n, using @a h as the hash function.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
+     * @param n     number of buckets to allocate
+     * @param h     hasher function to be used
      */
     template <class InputIterator>
     cache_set( InputIterator first, InputIterator last,
@@ -205,6 +269,12 @@ public:
     /** Creates a cache_set with a copy of a range and a bucket count of at
      *  least n, using h as the hash function and k as the key equal
      *  function.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
+     * @param n     number of buckets to allocate
+     * @param h     hasher function to be used
+     * @param k     key comparison function to be used
      */
     template <class InputIterator>
     cache_set( InputIterator first, InputIterator last,
@@ -246,6 +316,15 @@ public:
     {
         m_ht.set_empty_value( value );
     }
+    
+    /** Get the value of the empty item.
+     * 
+     * @return the item value used to mark empty buckets. 
+     */
+    const value_type& get_empty_key() const
+    {
+        return m_ht.get_empty_value();
+    }
 
     /** Insert an item in the set.
      *
@@ -274,7 +353,12 @@ public:
     void insert( InputIterator first, InputIterator last )
     { m_ht.insert( first, last ); }
 
-    /** Not standard.. */
+    /** Not standard iterator insertion
+     * 
+     * @param it iterator that mark the insertion position
+     * @param obj the new value for the item
+     * @return an iterator to the modified item
+     */
     iterator insert( iterator it, const value_type& obj )
     { return m_ht.insert( obj ).first; }
 
@@ -313,7 +397,7 @@ public:
      */
     void erase( iterator first, iterator last ) { m_ht.erase( first, last ); }
 
-    /** Erases all of the elements. */
+    /** Removes all the elements. */
     void clear() { m_ht.clear(); }
 
     /** Increases the bucket count to at least @a size.

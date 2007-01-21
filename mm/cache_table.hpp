@@ -46,6 +46,7 @@
 /// Default number of buckets, when it's not specified.
 #define MM_DEFAULT_TABLE_SIZE 4096
 
+
 namespace mm 
 {
 
@@ -66,6 +67,10 @@ class cache_table_const_iterator;
 /**
  * Computes the "distance" between two iterators, as the number of 
  * steps needed to reach the last one starting from first.
+ * 
+ * @param first iterator to begin  
+ * @param last  iterator to end
+ * @return the number of steps needed to go from @a first to @a last
  */
 template <typename IteratorA, typename IteratorB>
 inline ptrdiff_t distance( IteratorA first, IteratorB last )
@@ -164,7 +169,10 @@ public:
           m_pos( 0 )
     {}
     
-    /// Copy constructor
+    /** Copy constructor. 
+     * 
+     * @param it the iterator to be copied.
+     */
     cache_table_iterator( const cache_table_iterator& it )
         : m_ht(  it.m_ht  ), 
           m_pos( it.m_pos )
@@ -194,7 +202,11 @@ public:
         return *this;
     }
 
-    //
+    /** Advance the iterator to next item.
+     *
+     *  @warning Note that no bound check is performed, you should not pass
+     *           the @p end() limit.
+     */
     iterator operator++(int) { iterator tmp(*this); ++*this; return tmp; }
             
     /** Equality operator.
@@ -219,8 +231,10 @@ private:
         while ( m_pos < m_ht->m_end_marker && m_ht->is_empty_key( m_pos ) )
             ++m_pos;
     }
-        
+    
+    /// Pointer to tha associated cache-table instance
     const table*  m_ht;
+    /// Pointer to an item in the cache-table
     pointer       m_pos;
 
     /// Const iterator definition
@@ -309,7 +323,10 @@ public:
         : m_ht( 0 ), m_pos( 0 )
     {}
 
-    /// Copy constructor
+    /** Copy constructor. 
+     * 
+     * @param it the iterator to be copied.
+     */
     cache_table_const_iterator( const iterator& it )
         : m_ht(  it.m_ht  ), 
           m_pos( it.m_pos )
@@ -338,7 +355,12 @@ public:
         advance_to_next_item();
         return *this;
     }
-        
+      
+    /** Advance the iterator to next item.
+     *
+     *  @warning Note that no bound check is performed, you should not pass
+     *           the @p end() limit.
+     */  
     const_iterator operator++(int)
     { const_iterator tmp(*this); ++*this; return tmp; }
         
@@ -366,14 +388,27 @@ private:
             ++m_pos;
     }
         
-    const table* m_ht;
-    pointer      m_pos;
+    /// Pointer to tha associated cache-table instance
+    const table*  m_ht;
+    /// Pointer to an item in the cache-table
+    pointer       m_pos;
 
+    /// Cache table definition
     friend class cache_table<V,K,DF,HF,KEq,KEx,A>;
 };
 
 
 ////////////////////////////////////////////////////////////////////////
+
+/**
+ * CacheTable: back-end data structure class.
+ * 
+ * This class should not be used directly. Instead use one of CacheMap
+ * or CacheSet.
+ * 
+ * @author Matteo Merli
+ * @date $Date$
+ */
 template < class Value, 
            class Key,
            class DiscardFunction,

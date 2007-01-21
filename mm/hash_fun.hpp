@@ -51,6 +51,7 @@ using std::size_t;
 ///////////////////////////////////////////////////////////////////////
 
 /** Hash value specialization for @a char
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -58,6 +59,7 @@ inline size_t hash_value( char n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a unsigned @a char
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -65,6 +67,7 @@ inline size_t hash_value( unsigned char n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a short
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -72,6 +75,7 @@ inline size_t hash_value( short n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a unsigned @a char
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -79,6 +83,7 @@ inline size_t hash_value( unsigned short n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a int
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -86,6 +91,7 @@ inline size_t hash_value( int n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a unsigned @a int
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -93,6 +99,7 @@ inline size_t hash_value( unsigned int n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a long
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -100,6 +107,7 @@ inline size_t hash_value( long n )
 { return static_cast<size_t>( n ); }
 
 /** Hash value specialization for @a unsigned @a long
+ *  @param n the number to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -151,6 +159,7 @@ inline void hash_range( size_t& seed, Iterator first, Iterator last )
 }
 
 /** Hash value specialization for @a char*
+ *  @param s the c-style string to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -160,6 +169,7 @@ inline size_t hash_value( char* s )
 }
     
 /** Hash value specialization for @a const @a char*
+ *  @param s the c-style string to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -169,6 +179,7 @@ inline size_t hash_value( const char* s )
 }
 
 /** Hash value specialization for @a std::string
+ *  @param s the string to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -178,6 +189,7 @@ inline size_t hash_value( const std::string& s )
 }
 
 /** Hash value specialization for @a std::pair<T1,T2>
+ *  @param p the std::pair object to be hashed
  *  @return the hash value
  *  @relates hash
  */
@@ -218,6 +230,9 @@ inline void hash_combine( size_t& seed, const T& v )
  *  results.
  *
  *  This particular hash implementation, borrow many ideas from boost::hash.
+ * 
+ * @author Matteo Merli
+ * @date $Date$
  */
 template <class Key>
 struct hash
