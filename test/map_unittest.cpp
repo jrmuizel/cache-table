@@ -30,7 +30,6 @@
 // ---
 // Author: Craig Silverstein
 
-#include <google/sparsehash/config.h>
 #include <stdio.h>
 #include <time.h>              // for silly random-number-seed generator
 #include <math.h>              // for sqrt()
@@ -45,7 +44,6 @@
 #include <mm/cache_map.hpp>
 #include <mm/cache_set.hpp>
 #include <mm/hash_fun.hpp>
-#include <mm/jenkins_hash_fun.hpp>
 
 using mm::cache_map;
 using mm::cache_set;
@@ -59,15 +57,15 @@ using std::allocator;
 using std::equal_to;
 using std::ostream;
 
-#define LOGF  std::cout   // where we log to; LOGF is a historical name
-
 static const int DEFAULT_SIZE = 100000;
 
-#define CHECK(cond)  do {                       \
-  if (!(cond)) {                                \
-    LOGF << "Test failed: " #cond "\n";         \
-    std::exit( 1 );                             \
-  }                                             \
+#define CHECK(cond)  do {                                  \
+  if (!(cond)) {                                           \
+    std::cout << std::endl;                                \
+    std::cout << ">>>> at line " << __LINE__ << std::endl; \
+    std::cout << ">>>> Test failed: " #cond << std::endl;  \
+    std::exit( 1 );                                        \
+  }                                                        \
 } while (0)
 
 const char *words[] = { "Baffin",        // in 'words'
@@ -96,6 +94,7 @@ ostream& operator<<(ostream& s, const pair<P1, P2>& p) {
     return s;
 }
 
+// Comparison function for 'char *'
 struct strcmp_fnc
 {
     bool operator()(const char* s1, const char* s2) const {
@@ -218,15 +217,15 @@ void test_int()
         iterator_insert(&z, i, &insert_iter);
     
     for ( typename htint::const_iterator it = y.begin(); it != y.end(); ++it )
-        LOGF << "y: " << *it << "\n";
+        std::cout << "y: " << *it << "\n";
     z.insert(y.begin(), y.end());
     swap( y, z );
   
     for ( typename htint::iterator it = y.begin(); it != y.end(); ++it )
-        LOGF << "y+z: " << *it << "\n";
-    LOGF << "z has " << z.bucket_count() << " buckets\n";
-    LOGF << "y has " << y.bucket_count() << " buckets\n";
-    LOGF << "z size: " << z.size() << "\n";
+        std::cout << "y+z: " << *it << "\n";
+    std::cout << "z has " << z.bucket_count() << " buckets\n";
+    std::cout << "y has " << y.bucket_count() << " buckets\n";
+    std::cout << "z size: " << z.size() << "\n";
 
     for (int i = 0; i < 64; ++i) {
         // This test fails because 'y' has 64 buckets and inserting
@@ -259,16 +258,18 @@ void test_int()
     
     CHECK(z.size() == 8);
     for ( typename htint::const_iterator it = z.begin(); it != z.end(); ++it )
-        LOGF << "y: " << *it << "\n";
+        std::cout << "y: " << *it << "\n";
     for ( typename htint::const_iterator it = z.begin(); it != z.end(); ++it )
-        LOGF << "y: " << *it << "\n";
-    LOGF << "That's " << z.size() << " elements\n";
-    z.erase(z.begin(), z.end());
+        std::cout << "y: " << *it << "\n";
+    std::cout << "That's " << z.size() << " elements\n";
+    std::cout << "Distance " << mm::distance( z.begin(), z.end() ) << " elements\n";
+    z.erase( z.begin(), z.end() );
+    std::cout << "That's " << z.size() << " elements\n";
     CHECK(z.empty());
 
     y.clear();
     CHECK(y.empty());
-    LOGF << "y has " << y.bucket_count() << " buckets\n";
+    std::cout << "y has " << y.bucket_count() << " buckets\n";
 }
 
 // Performs tests where the hashtable's value type is assumed to be char*.
@@ -283,7 +284,7 @@ void test_charptr()
     set_empty_key(&w, (char*) NULL);
     insert(&w, const_cast<char **>(nwords),
            const_cast<char **>(nwords) + sizeof(nwords) / sizeof(*nwords));
-    LOGF << "w has " << w.size() << " items\n";
+    std::cout << "w has " << w.size() << " items\n";
     CHECK(w.size() == 2);
     CHECK(w == w);
     
@@ -308,7 +309,7 @@ void test_charptr()
             
             counts[ s ] = 0;
         }
-        LOGF << "Read " << x.size() << " words from " << file << "\n";
+        std::cout << "Read " << x.size() << " words from " << file << "\n";
         
         fclose(fp);
         
@@ -348,7 +349,7 @@ void test_string()
     
     delete[] nwords1;
     
-    LOGF << "w has " << w.size() << " items: " << std::endl;
+    std::cout << "w has " << w.size() << " items: " << std::endl;
     for ( typename ht::iterator it = w.begin(); it != w.end(); ++it )
     {
         std::cout << *it << std::endl;
@@ -368,7 +369,7 @@ void test_string()
         FILE *fp = fopen(file, "r");
         if ( fp == NULL )
         {
-            LOGF << "Can't open " << file << ", skipping dictionary hash..." << std::endl;
+            std::cout << "Can't open " << file << ", skipping dictionary hash..." << std::endl;
         }
         else
         {
@@ -382,7 +383,7 @@ void test_string()
             }
             fclose( fp );
             
-            LOGF << "Read " << x.size() << " words from " << file << std::endl;
+            std::cout << "Read " << x.size() << " words from " << file << std::endl;
             std::cout << "Collisions: " << x.num_collisions() << std::endl;
             
             for ( char **word = const_cast<char **>(words);
@@ -459,19 +460,20 @@ void test_hash( const string& s1, const string& s2 )
 
 int main( int argc, char **argv )
 {
-    LOGF << "\n\nTEST WITH CACHE_MAP\n\n";
-    test < cache_map<char *, int, mm::jenkins_hash<char *>, strcmp_fnc>,
-           cache_map< string, int, mm::jenkins_hash<string> >,
+   /*
+    std::cout << "\n\nTEST WITH CACHE_MAP\n\n";
+    test < cache_map<char *, int, mm::hash<char *>, strcmp_fnc>,
+           cache_map< string, int >,
            cache_map<int, int>
          >();
-
-    LOGF << "\n\nTEST WITH CACHE_SET\n\n";
-    test < cache_set<char *, mm::jenkins_hash<char *>, strcmp_fnc>,
-           cache_set<string, mm::jenkins_hash<string> >,
+*/
+    std::cout << "\n\nTEST WITH CACHE_SET\n\n";
+    test < cache_set<char *, mm::hash<char *>, strcmp_fnc>,
+           cache_set<string>,
            cache_set<int>
          >();
 
-    LOGF << "\nAll tests pass.\n";
+    std::cout << "\nAll tests pass.\n";
 
     std::cout << std::endl;
     
