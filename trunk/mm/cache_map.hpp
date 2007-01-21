@@ -48,9 +48,7 @@
 namespace mm
 {
     
-using std::equal_to;
 using std::pair;
-using std::allocator;
 using std::_Select1st;
 
 /** Default "discarding" policy.
@@ -72,7 +70,10 @@ struct DiscardIgnore
     {}
 };
 
-/** Cache map...
+/** Cache map
+ * 
+ * Implements a @a map container like std::hash_map, but with a 
+ * fixed element number.
  *
  *  <b>Template Parameters</b>
  * 
@@ -86,14 +87,14 @@ struct DiscardIgnore
  *  - @a DiscardFunction : Discarded item manager.
  *
  *  @author Matteo Merli
- *  @date 2006
+ *  @date $Date$
  */
 template < class Key, 
            class T,
            class HashFunction = hash<Key>,
-           class KeyEqual = equal_to<Key>,
+           class KeyEqual = std::equal_to<Key>,
            class DiscardFunction = DiscardIgnore< pair<Key,T> >,
-           class Allocator = allocator< pair<Key,T> > 
+           class Allocator = std::allocator< pair<Key,T> > 
 >
 class cache_map
 {
@@ -158,7 +159,6 @@ public:
     hasher hash_funct() const { return m_ht.hash_funct(); }
 
     /** Returns the key_equal object used by the hash_map. 
-     *
      */
     key_equal key_eq() const  { return m_ht.key_eq(); }
 
@@ -173,6 +173,9 @@ public:
     
 public:
 
+    /** Constructor. Construct an empty map with the default
+     * number of buckets.
+     */
     cache_map() : m_ht() {}
     
     /** Constructor.  You have to specify the size of the underlying table,
@@ -188,10 +191,21 @@ public:
         : m_ht( n, hasher(), key_equal() )
     {}
 
+    /** Constructor. 
+     * 
+     * @param n the number of item buckets to allocate.
+     * @param hash the hasher function 
+     */
     cache_map( size_type n, const hasher& hash )
         : m_ht( n, hash, key_equal() )
     {}
 
+    /** Constructor. 
+     * 
+     * @param n    the number of item buckets to allocate
+     * @param hash the hasher function
+     * @param ke   the key comparison function
+     */
     cache_map( size_type n,
                const hasher& hash,
                const key_equal& ke  )
@@ -199,6 +213,9 @@ public:
     {}
 
     /** Creates a cache_map with a copy of a range.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
      */
     template <class InputIterator>
     cache_map( InputIterator first, InputIterator last )
@@ -209,6 +226,10 @@ public:
 
     /** Creates a cache_map with a copy of a range and a bucket count of at
      *  least @a n.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
+     * @param n     number of buckets to allocate
      */
     template <class InputIterator>
     cache_map( InputIterator first, InputIterator last, size_type n )
@@ -219,6 +240,11 @@ public:
 
     /** Creates a cache_map with a copy of a range and a bucket count of at
      *  least @a n, using @a h as the hash function.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
+     * @param n     number of buckets to allocate
+     * @param h     hasher function to be used
      */
     template <class InputIterator>
     cache_map( InputIterator first, InputIterator last,
@@ -231,6 +257,12 @@ public:
     /** Creates a cache_map with a copy of a range and a bucket count of at
      *  least n, using h as the hash function and k as the key equal
      *  function.
+     * 
+     * @param first iterator pointing to the first item
+     * @param last  iterator pointing to the last item
+     * @param n     number of buckets to allocate
+     * @param h     hasher function to be used
+     * @param k     key comparison function to be used
      */
     template <class InputIterator>
     cache_map( InputIterator first, InputIterator last,
@@ -273,6 +305,10 @@ public:
         m_ht.set_empty_value( value_type( key, data_type() ) );
     }
 
+    /** Get the value of the empty key.
+     * 
+     * @return the key value used to mark empty buckets. 
+     */
     const key_type& get_empty_key() const
     {
         return m_ht.get_empty_value().first;
@@ -315,7 +351,12 @@ public:
     void insert( InputIterator first, InputIterator last )
     { m_ht.insert( first, last ); }
 
-    /** Not standard.. */
+    /** Not standard iterator insertion
+     * 
+     * @param it iterator that mark the insertion position
+     * @param obj the new value for the item
+     * @return an iterator to the modified item
+     */
     iterator insert( iterator it, const value_type& obj )
     { return m_ht.insert( obj ).first; }
 
