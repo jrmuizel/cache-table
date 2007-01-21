@@ -60,6 +60,14 @@ using std::_Select1st;
 template < class V >
 struct DiscardIgnore
 {
+    /** This operator is called when the map need to discard an
+     * item due to a key collision.
+     * 
+     * @param old_value a reference to the element discarded
+     * @param new_value a reference to the element that will enter 
+     *                  in the map
+     * 
+     */
     void operator() ( const V& old_value, const V& new_value )
     {}
 };

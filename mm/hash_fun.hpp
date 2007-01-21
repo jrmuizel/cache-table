@@ -57,7 +57,7 @@ using std::size_t;
 inline size_t hash_value( char n )
 { return static_cast<size_t>( n ); }
 
-/** Hash value specialization for @a unsigned @char
+/** Hash value specialization for @a unsigned @a char
  *  @return the hash value
  *  @relates hash
  */
@@ -71,7 +71,7 @@ inline size_t hash_value( unsigned char n )
 inline size_t hash_value( short n )
 { return static_cast<size_t>( n ); }
 
-/** Hash value specialization for @a unsigned @char
+/** Hash value specialization for @a unsigned @a char
  *  @return the hash value
  *  @relates hash
  */
@@ -85,7 +85,7 @@ inline size_t hash_value( unsigned short n )
 inline size_t hash_value( int n )
 { return static_cast<size_t>( n ); }
 
-/** Hash value specialization for @a unsigned @int
+/** Hash value specialization for @a unsigned @a int
  *  @return the hash value
  *  @relates hash
  */
@@ -99,7 +99,7 @@ inline size_t hash_value( unsigned int n )
 inline size_t hash_value( long n )
 { return static_cast<size_t>( n ); }
 
-/** Hash value specialization for @a unsigned long
+/** Hash value specialization for @a unsigned @a long
  *  @return the hash value
  *  @relates hash
  */
@@ -212,7 +212,7 @@ inline void hash_combine( size_t& seed, const T& v )
 /** Callable hash function.
  *
  *  A Hash Function is a Unary Function that is used by Hashed Associative
- *  Containers: it maps its argument to a result of type size_t. A Hash
+ *  Containers: it maps its argument to a result of type @a size_t. A Hash
  *  Function must be deterministic and stateless. That is, the return value
  *  must depend only on the argument, and equal arguments must yield equal
  *  results.

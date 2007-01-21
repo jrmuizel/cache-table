@@ -63,6 +63,23 @@ template < class Value, class Key, class DiscardFunction,
 template <class V, class K, class DF, class HF, class KEq, class KEx, class A>
 class cache_table_const_iterator;
 
+/**
+ * Computes the "distance" between two iterators, as the number of 
+ * steps needed to reach the last one starting from first.
+ */
+template <typename IteratorA, typename IteratorB>
+inline ptrdiff_t distance( IteratorA first, IteratorB last )
+{
+    ptrdiff_t n = 0;
+    while ( first != last )
+    {
+        ++first;
+        ++n;
+    }
+    
+    return n;
+}
+
 ////////////////////////////////////////////////////////////////////////
 
 /**
@@ -179,7 +196,7 @@ public:
 
     //
     iterator operator++(int) { iterator tmp(*this); ++*this; return tmp; }
-        
+            
     /** Equality operator.
      *
      *  @param it another iterator
@@ -340,7 +357,7 @@ public:
      */
     bool operator!=( const const_iterator& it ) const
     { return m_pos != it.m_pos; }
-        
+      
 private:
 
     void advance_to_next_item()
@@ -354,6 +371,7 @@ private:
 
     friend class cache_table<V,K,DF,HF,KEq,KEx,A>;
 };
+
 
 ////////////////////////////////////////////////////////////////////////
 template < class Value, 
@@ -643,17 +661,18 @@ public:
         
     void erase( iterator first, iterator last )
     {
+        m_num_elements -= mm::distance( first, last );
         _Destroy( first, last );
-        std::uninitialized_copy( first, last, m_empty_value );
+        std::uninitialized_fill( first, last, m_empty_value );
     }
-
+    
     void erase( const_iterator first, const_iterator last )
     {
         erase( iterator( const_cast<cache_table*>( first.m_ht ),
                          const_cast<pointer>( first.m_pos ) ),
                iterator( const_cast<cache_table*>( last.m_ht ),
                          const_cast<pointer>( last.m_pos ) )
-              );
+             );
     }
 
     void resize( size_type size )
